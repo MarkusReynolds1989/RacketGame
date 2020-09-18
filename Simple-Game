@@ -3,8 +3,13 @@
          2htdp/universe
          lang/posn)
 
-(define scene1 (empty-scene 500 500))
+;; constants
+(define width 500)
+(define height 500)
 
+(define scene1 (empty-scene width height))
+
+;; Point class is simply x y
 (define point%
   (class object%
     (init-field x y)
@@ -14,9 +19,16 @@
       y)
     (super-new)))
 
-(define actor%
+(define game-piece%
   (class object%
-    (init-field position sprite size)
+    (init-field
+     [position (send this get-position)]
+     [sprite (send this get-sprite)]
+     [size (send this get-size)])
+    (define/public (get-position)
+      position)
+    (define/public (get-size)
+      size)
     (define/public (get-pos-x)
       (send position get-x))
     (define/public (get-pos-y)
@@ -25,15 +37,34 @@
       (send size get-x))
     (define/public (get-size-y)
       (send size get-y))
-    (define/public (draw scene)
-      (place-image sprite
-                   (send this get-pos-x)
-                   (send this get-pos-y) scene))
+    (define/public (get-sprite)
+      sprite)
+    (super-new)))
+
+(define actor%
+  (class game-piece%
+    (super-new)))
+
+(define tile%
+  (class game-piece%
     (super-new)))
 
 (define world%
   (class object%
-    (init-field player scene)
+    (init-field
+     time
+     [player (send this get-player)]
+     [scene (send this get-scene)])
+    (define/public (get-player)
+      player)
+    (define/public (get-player-position)
+      (send player get-position))
+    (define/public (get-player-size)
+      (send player get-size))
+    (define/public (get-player-sprite)
+      (send player get-sprite))
+    (define/public (get-scene)
+      scene)
     (define/public (get-player-x)
       (send player get-pos-x))
     (define/public (get-player-y)
@@ -42,8 +73,18 @@
       (send player get-size-x))
     (define/public (get-player-size-y)
       (send player get-size-y))
+    (define/public (get-time)
+      time)
     (define/public (draw)
-      (send player draw))
+      ;; Handle all of the graphical representation of the state
+      (place-images
+       (list (send player get-sprite)
+             (text (~a (round (send this get-time))) 20 'black))
+       (list
+        (make-posn (send player get-pos-x)
+                   (send player get-pos-y))
+        (make-posn 450 50))
+       scene))
     (super-new)))
      
 (define player
@@ -53,59 +94,30 @@
        [size (new point% [x 50] [y 50])]))
 
 
+(define world1 (new world%
+                    [player player]
+                    [scene scene1]
+                    [time 60]))
+
+
+;; Main
 (define (draw state)
-  (send player draw scene1))
+  (send state draw))
 
 (define (update state)
-  state)
+  (new world%
+       [player (new actor%
+                    [position (send state get-player-position)]
+                    [sprite (send state get-player-sprite)]
+                    [size (send state get-player-size)])]
+       [scene scene1]
+       [time (- (send state get-time) 0.03)]))
 
-(big-bang 0
+(big-bang world1
   (to-draw draw)
   (on-tick update))
 
 #|
-(struct point (x y))
-
-(define player-loc (point 250.0 250.0))
-(define ball-loc (point 0.0 50.0))
-
-;; The world of our game
-(define field (list player-loc ball-loc))
-
-(define scene1 (empty-scene 500 500))
-
-;; Draws the scene, state is the state that is passed in to use
-(define (render state)
-  (place-images
-   (list (square 50 'solid 'red)
-         (text "test" 20 'black)
-         (circle 5 'solid 'blue))
-   (list
-    (make-posn (point-x (first state))
-               (point-y (first state)))
-    (make-posn 450 50)
-    (make-posn (point-x (second state))
-               (point-y (second state))))
-   scene1))
-
-;; What to do on every tick
-(define (tock state)
-  (list (point (point-x (first state))
-               (point-y (first state)))
-        (point
-         (cond
-           ([< (point-x (second state)) (point-x (first state))]
-            (+ (point-x (second state)) 1))
-           ([> (point-x (second state)) (point-x (first state))]
-            (- (point-x (second state)) 1))
-           (#t (point-x (second state))))
-         (cond
-           ([< (point-y (second state)) (point-y (first state))]
-            (+ (point-y (second state)) 1))
-           ([> (point-y (second state)) (point-y (first state))]
-            (- (point-y (second state)) 1))
-           (#t (point-y (second state)))))))
-
 ;; The key handler, takes the state of the program and a key and
 ;; returns new state
 (define (key-handler state a-key)
@@ -135,9 +147,4 @@
             )
        (list (point [point-x (first state)]
                     [+ (point-y (first state)) speed])
-             (second state))])))
-
-(big-bang field
-  (on-tick tock)
-  (to-draw render)
-  (on-key key-handler)) |#
+             (second state))]))) |#
