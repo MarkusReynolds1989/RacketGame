@@ -3,67 +3,7 @@
          2htdp/universe
          lang/posn)
 
-(define scene1 (empty-scene 500 500))
 
-(define point%
-  (class object%
-    (init-field x y)
-    (define/public (get-x)
-      x)
-    (define/public (get-y)
-      y)
-    (super-new)))
-
-(define actor%
-  (class object%
-    (init-field position sprite size)
-    (define/public (get-pos-x)
-      (send position get-x))
-    (define/public (get-pos-y)
-      (send position get-y))
-    (define/public (get-size-x)
-      (send size get-x))
-    (define/public (get-size-y)
-      (send size get-y))
-    (define/public (draw scene)
-      (place-image sprite
-                   (send this get-pos-x)
-                   (send this get-pos-y) scene))
-    (super-new)))
-
-(define world%
-  (class object%
-    (init-field player scene)
-    (define/public (get-player-x)
-      (send player get-pos-x))
-    (define/public (get-player-y)
-      (send player get-pos-y))
-    (define/public (get-player-size-x)
-      (send player get-size-x))
-    (define/public (get-player-size-y)
-      (send player get-size-y))
-    (define/public (draw)
-      (send player draw))
-    (super-new)))
-     
-(define player
-  (new actor%
-       [position (new point% [x 250] [y 250])]
-       [sprite (square 50 'solid 'red)]
-       [size (new point% [x 50] [y 50])]))
-
-
-(define (draw state)
-  (send player draw scene1))
-
-(define (update state)
-  state)
-
-(big-bang 0
-  (to-draw draw)
-  (on-tick update))
-
-#|
 (struct point (x y))
 
 (define player-loc (point 250.0 250.0))
@@ -140,4 +80,4 @@
 (big-bang field
   (on-tick tock)
   (to-draw render)
-  (on-key key-handler)) |#
+  (on-key key-handler))
