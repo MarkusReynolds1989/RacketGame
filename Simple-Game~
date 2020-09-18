@@ -1,0 +1,68 @@
+#lang racket
+(require 2htdp/image
+         2htdp/universe)
+
+(define point%
+  (class object%
+    (init-field x y)
+    (super-new)
+    (define/public (get-x)
+      x)
+    (define/public (get-y)
+      y)
+    (define/public (set-y input)
+      (set! y input))
+    (define/public (set-x input)
+      (set! x input))))
+
+
+(define actor%
+  (class object%
+    (init-field position)
+    (super-new)
+    (define/public (get-position)
+      position)
+    (define/public (set-position input)
+      (set! position input))))
+
+
+(define player
+  (new actor%
+       [position (new point%
+                      [x 100]
+                      [y 100])]))
+
+(define scene1 (empty-scene 500 500))
+
+(define (world x)
+  (place-image (square 50 'solid 'red)
+               (send (send player get-position) get-x)
+               (send  (send player get-position) get-y)
+               scene1))
+
+(define (change-world x)
+  x)
+
+(define (key-handler state a-key)
+  (cond
+    [(key=? a-key "left")
+     (new point%
+          [x (- (send state get-x) 1)]
+          [y (send state get-y)])]
+    [(key=? a-key "right")
+     (new point%
+          [ x (+ (send state get-x) 1)]
+          [y (send state get-y)])]
+    [(key=? a-key "up")
+     (new point%
+          [x (send state get-x)]
+          [y (+ (send state get-y) 1)])]
+    [(key=? a-key "down")
+     (new point%
+          [x (send state get-x)]
+          [y (- (send state get-y) 1)])]))
+
+(big-bang (send player get-position)
+  (on-tick change-world)
+  (to-draw world)
+  (on-key key-handler))

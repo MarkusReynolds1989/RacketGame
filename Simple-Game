@@ -1,0 +1,83 @@
+#lang racket
+(require 2htdp/image
+         2htdp/universe
+         lang/posn)
+
+
+(struct point (x y))
+
+(define player-loc (point 250.0 250.0))
+(define ball-loc (point 0.0 50.0))
+
+;; The world of our game
+(define field (list player-loc ball-loc))
+
+(define scene1 (empty-scene 500 500))
+
+;; Draws the scene, state is the state that is passed in to use
+(define (render state)
+  (place-images
+   (list (square 50 'solid 'red)
+         (text "test" 20 'black)
+         (circle 5 'solid 'blue))
+   (list
+    (make-posn (point-x (first state))
+               (point-y (first state)))
+    (make-posn 450 50)
+    (make-posn (point-x (second state))
+               (point-y (second state))))
+   scene1))
+
+;; What to do on every tick
+(define (tock state)
+  (list (point (point-x (first state))
+               (point-y (first state)))
+        (point
+         (cond
+           ([< (point-x (second state)) (point-x (first state))]
+            (+ (point-x (second state)) 1))
+           ([> (point-x (second state)) (point-x (first state))]
+            (- (point-x (second state)) 1))
+           (#t (point-x (second state))))
+         (cond
+           ([< (point-y (second state)) (point-y (first state))]
+            (+ (point-y (second state)) 1))
+           ([> (point-y (second state)) (point-y (first state))]
+            (- (point-y (second state)) 1))
+           (#t (point-y (second state)))))))
+
+;; The key handler, takes the state of the program and a key and
+;; returns new state
+(define (key-handler state a-key)
+  (let ([speed 10.0])
+    (cond
+      [(and (key=? a-key "left")
+            ;; Check if in bounds
+            (> (point-x (first state)) 0)
+            ) 
+       (list (point [- (point-x (first state)) speed]
+                    [point-y (first state)])
+             (second state))]
+      [(and (key=? a-key "right")
+            (< (point-x (first state)) 500)
+            )
+       (list (point [+ (point-x (first state)) speed]
+                    [point-y (first state)])
+             (second state))]
+      [(and (key=? a-key "up")
+            (> (point-x (first state)) 0)
+            )
+       (list (point [point-x (first state)]
+                    [- (point-y (first state)) speed])
+             (second state))]
+      [(and (key=? a-key "down")
+            (< (point-y (first state)) 500)
+            )
+       (list (point [point-x (first state)]
+                    [+ (point-y (first state)) speed])
+             (second state))])))
+
+(big-bang field
+  (on-tick tock)
+  (to-draw render)
+  (on-key key-handler))
