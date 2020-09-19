@@ -1,7 +1,8 @@
 #lang racket
 (require 2htdp/image
          2htdp/universe
-         lang/posn)
+         lang/posn
+         struct-update)
 
 (define screen-height 500)
 (define screen-width 500)
@@ -11,6 +12,10 @@
 (struct actor [position sprite size] #:transparent)
 (struct world [actor scene] #:transparent)
 
+(define-struct-updaters world)
+(define-struct-updaters actor)
+(define-struct-updaters point)
+
 (define player
   (actor
    [point 250 250]
@@ -19,7 +24,7 @@
 
 (define world1
   (world player scene1))
-
+  
 (define (get-actor-x state)
   (point-x (actor-position (world-actor state))))
 
@@ -39,11 +44,33 @@
       [(and (key=? a-key "left")
             ;; Check if in bounds
             (>
-             (- (get-actor-x state)(/ (get-actor-size state) 2)) 0))
-       (struct-copy world state
-                    [actor (struct-copy actor state
-                                        [position (struct-copy point state
-                                                               [x (- (get-actor-x state) 1)])])])])))
+             (- (get-actor-x state)
+                (/ (get-actor-size state) 2)) 0))
+       (world-actor-set state
+                        (actor-position-set (world-actor state)
+                                            (point (- (get-actor-x state) speed) (get-actor-y state))))]
+      [(and (key=? a-key "right")
+            (<
+             (+ (get-actor-x state)
+                (/ (get-actor-size state) 2)) screen-width))
+       (world-actor-set state
+                        (actor-position-set (world-actor state)
+                                            (point (+ (get-actor-x state) speed) (get-actor-y state))))]
+      [(and (key=? a-key "up")
+            (>
+             (- (get-actor-y state)
+                (/ (get-actor-size state)) 2)) 0)
+       (world-actor-set state
+                        (actor-position-set (world-actor state)
+                                            (point (get-actor-x state) (- (get-actor-y state) speed))))]
+      [(and (key=? a-key "down")
+            (<
+             (+ (get-actor-y state)
+                (/ (get-actor-size state)) 2)) screen-height)
+       (world-actor-set state
+                        (actor-position-set (world-actor state)
+                                            (point (get-actor-x state) (+ speed (get-actor-y state)))))]                       
+      [#t state])))
 
 
        
