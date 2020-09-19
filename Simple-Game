@@ -52,7 +52,7 @@
 (define world%
   (class object%
     (init-field
-     time
+     [time (send this get-time)]
      [player (send this get-player)]
      [scene (send this get-scene)])
     (define/public (get-player)
@@ -100,6 +100,66 @@
                     [time 60]))
 
 
+;; Key-handler
+(define (key-handler state a-key)
+  (let ([speed 10.0])
+    (cond
+      
+      [(and (key=? a-key "left")
+            ;; Check if in bounds
+            (> (send state get-player-x)) 0)
+       (new world%
+            [player (new actor%
+                         [position
+                          (new point%
+                               [x (- (send state get-player-x) speed)]
+                               [y (send state get-player-y)])]
+                         [sprite (send state get-player-sprite)]
+                         [size (send state get-player-size)])]
+            [scene (send state get-scene)]
+            [time (send state get-time)])]
+      
+      [(and (key=? a-key "right")
+            (< (send state get-player-x)) width)
+       (new world%
+            [player (new actor%
+                         [position
+                          (new point%
+                               [x (+ (send state get-player-x) speed)]
+                               [y (send state get-player-y)])]
+                         [sprite (send state get-player-sprite)]
+                         [size (send state get-player-size)])]
+            [scene (send state get-scene)]
+            [time (send state get-time)])]
+
+      [(and (key=? a-key "up")
+            ;; Check if in bounds
+            (> (send state get-player-y)) 0)
+       (new world%
+            [player (new actor%
+                         [position
+                          (new point%
+                               [x (send state get-player-x)]
+                               [y (- (send state get-player-y) speed)])]
+                         [sprite (send state get-player-sprite)]
+                         [size (send state get-player-size)])]
+            [scene (send state get-scene)]
+            [time (send state get-time)])]
+
+      [(and (key=? a-key "down")
+            ;; Check if in bounds
+            (< (send state get-player-x)) height)
+       (new world%
+            [player (new actor%
+                         [position
+                          (new point%
+                               [x (send state get-player-x)]
+                               [y (+ (send state get-player-y) speed)])]
+                         [sprite (send state get-player-sprite)]
+                         [size (send state get-player-size)])]
+            [scene (send state get-scene)]
+            [time (send state get-time)])])))
+
 ;; Main
 (define (draw state)
   (send state draw))
@@ -115,7 +175,8 @@
 
 (big-bang world1
   (to-draw draw)
-  (on-tick update))
+  (on-tick update)
+  (on-key key-handler))
 
 #|
 ;; The key handler, takes the state of the program and a key and
